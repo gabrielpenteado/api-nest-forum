@@ -1,13 +1,26 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Prisma, PrismaClient, User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+import { PrismaService } from 'src/database/prisma.service';
 
 @Injectable()
 export class UserService {
   @Inject()
-  private readonly prisma: PrismaClient;
+  private readonly prisma: PrismaService;
+
+  async user(
+    UserWhereUniqueInput: Prisma.UserWhereUniqueInput,
+  ): Promise<User | null> {
+    return this.prisma.user.findUnique({
+      where: UserWhereUniqueInput,
+    });
+  }
 
   async createUser(data: Prisma.UserCreateInput) {
-    return this.prisma.user.create({ data });
+    const hashPassword = await bcrypt.hash(data.password, 10);
+    return this.prisma.user.create({
+      data: { ...data, password: hashPassword },
+    });
   }
 
   async updateUser(params: {
